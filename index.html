@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <title>נוכחות</title>
+</head>
+<body style="text-align: center; font-family: sans-serif; margin-top: 50px;">
+  <h2>דיווח נוכחות</h2>
+  
+  <label for="userId">הכנס מזהה משתמש:</label><br>
+  <input type="text" id="userId" placeholder="למשל 123"><br><br>
+
+  <button onclick="sendAction('start')">כניסה</button>
+  <button onclick="sendAction('end')">יציאה</button>
+
+  <p id="status"></p>
+
+  <script>
+    const webhookUrl = 'https://hook.eu2.make.com/f6qfg8p8qhki26eh3c63ejkkdj474jli';
+    
+    function sendAction(action) {
+      const userId = document.getElementById('userId').value;
+      if (!userId) {
+        alert("אנא הכנס מזהה משתמש");
+        return;
+      }
+
+      fetch(`${webhookUrl}?userId=${encodeURIComponent(userId)}&action=${action}`, {
+        method: 'GET',
+      })
+      .then(res => {
+        if (res.ok) {
+          document.getElementById('status').innerText = `נשלח בהצלחה (${action})`;
+        } else {
+          document.getElementById('status').innerText = "שגיאה בשליחה";
+        }
+      })
+      .catch(() => {
+        document.getElementById('status').innerText = "שגיאה ברשת";
+      });
+    }
+  </script>
+</body>
+</html>
