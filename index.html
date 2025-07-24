@@ -7,38 +7,143 @@
 <body style="text-align: center; font-family: sans-serif; margin-top: 50px;">
   <h2>דיווח נוכחות</h2>
   
-  <label for="userId">הכנס מזהה משתמש:</label><br>
-  <input type="text" id="userId" placeholder="למשל 123"><br><br>
 
-  <button onclick="sendAction('start')">כניסה</button>
-  <button onclick="sendAction('end')">יציאה</button>
-
-  <p id="status"></p>
+  <div class="form-container">
+    <label for="userId">הכנס שם משתמש:</label><br>
+    <input type="text" id="userId" placeholder="למשל ישראל ישראלי" autocomplete="off"><br><br>
+    <div class="button-group">
+      <button id="startBtn" onclick="sendAction('start')" disabled>כניסה</button>
+      <button id="endBtn" onclick="sendAction('end')" disabled>יציאה</button>
+    </div>
+    <p id="status"></p>
+  </div>
 
   <script>
     const webhookUrl = 'https://hook.eu2.make.com/f6qfg8p8qhki26eh3c63ejkkdj474jli';
-    
+    const userIdInput = document.getElementById('userId');
+    const startBtn = document.getElementById('startBtn');
+    const endBtn = document.getElementById('endBtn');
+    const statusP = document.getElementById('status');
+
+    // Prefill user if exists
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedUser = localStorage.getItem('userId');
+      if (savedUser) {
+        userIdInput.value = savedUser;
+        enableButtons(true);
+      }
+    });
+
+    // Enable/disable buttons based on input
+    userIdInput.addEventListener('input', () => {
+      enableButtons(!!userIdInput.value.trim());
+    });
+
+    function enableButtons(enable) {
+      startBtn.disabled = !enable;
+      endBtn.disabled = !enable;
+    }
+
     function sendAction(action) {
-      const userId = document.getElementById('userId').value;
+      const userId = userIdInput.value.trim();
       if (!userId) {
-        alert("אנא הכנס מזהה משתמש");
+        statusP.innerText = "אנא הכנס שם משתמש";
         return;
       }
+      // Save user for next time
+      localStorage.setItem('userId', userId);
 
-      fetch(`${webhookUrl}?userId=${encodeURIComponent(userId)}&action=${action}`, {
+      // Get local time in ISO format
+      const now = new Date();
+      const time = now.toLocaleString('he-IL', { hour12: false });
+
+      // Disable buttons while waiting
+      enableButtons(false);
+      statusP.innerText = "שולח נתונים...";
+
+      fetch(`${webhookUrl}?userId=${encodeURIComponent(userId)}&action=${action}&time=${encodeURIComponent(time)}`, {
         method: 'GET',
       })
-      .then(res => {
-        if (res.ok) {
-          document.getElementById('status').innerText = `נשלח בהצלחה (${action})`;
+      .then(async res => {
+        let text = await res.text();
+        if (res.ok && text.trim().toUpperCase().includes('SUCCESS')) {
+          statusP.innerText = `הפעולה בוצעה בהצלחה (${action === 'start' ? 'כניסה' : 'יציאה'})`;
         } else {
-          document.getElementById('status').innerText = "שגיאה בשליחה";
+          statusP.innerText = "שגיאה בשליחה: " + text;
         }
       })
       .catch(() => {
-        document.getElementById('status').innerText = "שגיאה ברשת";
+        statusP.innerText = "שגיאה ברשת";
+      })
+      .finally(() => {
+        enableButtons(true);
       });
     }
   </script>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0f4f8 0%, #d9e7fa 100%);
+      min-height: 100vh;
+    }
+    .form-container {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      display: inline-block;
+      padding: 32px 40px 24px 40px;
+      margin-top: 30px;
+      min-width: 320px;
+      max-width: 90vw;
+    }
+    label {
+      font-size: 1.1em;
+      color: #333;
+      font-weight: 500;
+    }
+    input[type="text"] {
+      width: 90%;
+      padding: 10px;
+      border: 1px solid #b0b8c1;
+      border-radius: 8px;
+      font-size: 1em;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      transition: border 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: #1976d2;
+      outline: none;
+    }
+    .button-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    button {
+      background: #1976d2;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 28px;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(25,118,210,0.08);
+    }
+    button:disabled {
+      background: #b0b8c1;
+      cursor: not-allowed;
+    }
+    #status {
+      min-height: 24px;
+      font-size: 1em;
+      color: #1976d2;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+  </style>
 </body>
 </html>
