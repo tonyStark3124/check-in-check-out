@@ -11,6 +11,8 @@
   <div class="form-container">
     <label for="userId">הכנס שם משתמש:</label><br>
     <input type="text" id="userId" placeholder="למשל ישראל ישראלי" autocomplete="off"><br><br>
+    <label for="password">הכנס ססמה:</label><br>
+    <input type="password" id="password" placeholder="ססמה" autocomplete="off"><br><br>
     <div class="button-group">
       <button id="startBtn" onclick="sendAction('start')" disabled>כניסה</button>
       <button id="endBtn" onclick="sendAction('end')" disabled>יציאה</button>
@@ -24,6 +26,7 @@
     const startBtn = document.getElementById('startBtn');
     const endBtn = document.getElementById('endBtn');
     const statusP = document.getElementById('status');
+    const passwordInput = document.getElementById('password');
 
     // Prefill user if exists
     window.addEventListener('DOMContentLoaded', () => {
@@ -35,9 +38,12 @@
     });
 
     // Enable/disable buttons based on input
-    userIdInput.addEventListener('input', () => {
-      enableButtons(!!userIdInput.value.trim());
-    });
+
+    function checkInputs() {
+      enableButtons(!!userIdInput.value.trim() && !!passwordInput.value.trim());
+    }
+    userIdInput.addEventListener('input', checkInputs);
+    passwordInput.addEventListener('input', checkInputs);
 
     function enableButtons(enable) {
       startBtn.disabled = !enable;
@@ -46,8 +52,13 @@
 
     function sendAction(action) {
       const userId = userIdInput.value.trim();
+      const password = passwordInput.value.trim();
       if (!userId) {
         statusP.innerText = "אנא הכנס שם משתמש";
+        return;
+      }
+      if (!password) {
+        statusP.innerText = "אנא הכנס ססמה";
         return;
       }
       // Save user for next time
@@ -61,7 +72,7 @@
       enableButtons(false);
       statusP.innerText = "שולח נתונים...";
 
-      fetch(`${webhookUrl}?userId=${encodeURIComponent(userId)}&action=${action}&time=${encodeURIComponent(time)}`, {
+      fetch(`${webhookUrl}?userId=${encodeURIComponent(userId)}&password=${encodeURIComponent(password)}&action=${action}&time=${encodeURIComponent(time)}`, {
         method: 'GET',
       })
       .then(async res => {
@@ -83,67 +94,225 @@
 
   <style>
     body {
-      background: linear-gradient(135deg, #f0f4f8 0%, #d9e7fa 100%);
       min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      background: linear-gradient(135deg, #ff00cc 0%, #333399 100%);
+      animation: bgMove 10s linear infinite alternate;
+    }
+    @keyframes bgMove {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 100% 50%; }
     }
     .form-container {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-      display: inline-block;
-      padding: 32px 40px 24px 40px;
-      margin-top: 30px;
-      min-width: 320px;
-      max-width: 90vw;
+      background: rgba(255,255,255,0.95);
+      border-radius: 32px;
+      box-shadow: 0 8px 40px 0 rgba(0,0,0,0.25), 0 1.5px 0 #ff00cc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 32px 32px 32px;
+      margin: 40px auto 0 auto;
+      min-width: 280px;
+      max-width: 95vw;
+      width: 100%;
+      position: relative;
+      z-index: 2;
+      animation: popIn 1.2s cubic-bezier(.68,-0.55,.27,1.55);
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.7) rotate(-8deg); opacity: 0; }
+      60% { transform: scale(1.05) rotate(2deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    h2 {
+      font-size: 2.2em;
+      font-weight: 900;
+      background: linear-gradient(90deg, #ff00cc, #333399, #00ffea);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 24px;
+      letter-spacing: 2px;
+      animation: rainbowText 3s linear infinite alternate;
+    }
+    @keyframes rainbowText {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
     }
     label {
+      font-size: 1.15em;
+      color: #333399;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+      text-shadow: 0 1px 0 #fff, 0 2px 8px #ff00cc33;
+      align-self: flex-start;
+      transition: color 0.3s;
+      animation: labelWobble 2.5s infinite alternate cubic-bezier(.68,-0.55,.27,1.55);
+    }
+    @keyframes labelWobble {
+      0% { transform: rotate(-2deg); }
+      100% { transform: rotate(2deg); }
+    }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #ff00cc;
+      border-radius: 16px;
       font-size: 1.1em;
-      color: #333;
-      font-weight: 500;
-    }
-    input[type="text"] {
-      width: 90%;
-      padding: 10px;
-      border: 1px solid #b0b8c1;
-      border-radius: 8px;
-      font-size: 1em;
       margin-top: 8px;
-      margin-bottom: 16px;
-      transition: border 0.2s;
-    }
-    input[type="text"]:focus {
-      border-color: #1976d2;
+      margin-bottom: 18px;
+      background: linear-gradient(90deg, #fff 80%, #f0e6ff 100%);
+      box-shadow: 0 2px 12px #ff00cc22;
+      transition: border 0.3s, box-shadow 0.3s, background 0.3s;
       outline: none;
+      animation: inputPulse 2.5s infinite alternate;
+    }
+    input[type="text"]:focus, input[type="password"]:focus {
+      border-color: #00ffea;
+      box-shadow: 0 0 16px #00ffea99, 0 2px 12px #ff00cc22;
+      background: linear-gradient(90deg, #fff 60%, #00ffea22 100%);
+    }
+    @keyframes inputPulse {
+      0% { box-shadow: 0 2px 12px #ff00cc22; }
+      100% { box-shadow: 0 4px 24px #00ffea44; }
     }
     .button-group {
       display: flex;
-      gap: 16px;
+      gap: 24px;
       justify-content: center;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
+      width: 100%;
     }
     button {
-      background: #1976d2;
+      background: linear-gradient(90deg, #ff00cc 0%, #333399 100%);
       color: #fff;
       border: none;
-      border-radius: 8px;
-      padding: 10px 28px;
-      font-size: 1.1em;
-      font-weight: 600;
+      border-radius: 16px;
+      padding: 12px 36px;
+      font-size: 1.2em;
+      font-weight: 800;
       cursor: pointer;
-      transition: background 0.2s, box-shadow 0.2s;
-      box-shadow: 0 2px 8px rgba(25,118,210,0.08);
+      box-shadow: 0 4px 16px #33339933, 0 1.5px 0 #ff00cc;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      animation: buttonPop 1.5s infinite alternate cubic-bezier(.68,-0.55,.27,1.55);
+    }
+    @keyframes buttonPop {
+      0% { transform: scale(1) rotate(-1deg); }
+      100% { transform: scale(1.07) rotate(2deg); }
+    }
+    button:before {
+      content: '';
+      position: absolute;
+      left: -50%;
+      top: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, #fff6 0%, transparent 70%);
+      opacity: 0.2;
+      pointer-events: none;
+      animation: buttonShine 2.5s infinite linear;
+    }
+    @keyframes buttonShine {
+      0% { transform: translateX(-60%) rotate(0deg); }
+      100% { transform: translateX(60%) rotate(180deg); }
+    }
+    button:active {
+      transform: scale(0.97) rotate(-2deg);
+      background: linear-gradient(90deg, #00ffea 0%, #ff00cc 100%);
     }
     button:disabled {
-      background: #b0b8c1;
+      background: repeating-linear-gradient(135deg, #b0b8c1 0 10px, #e0e0e0 10px 20px);
+      color: #888;
       cursor: not-allowed;
+      box-shadow: none;
+      filter: grayscale(0.5) blur(0.5px);
     }
     #status {
-      min-height: 24px;
-      font-size: 1em;
-      color: #1976d2;
-      margin-top: 8px;
-      font-weight: 500;
+      min-height: 28px;
+      font-size: 1.1em;
+      color: #ff00cc;
+      margin-top: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-shadow: 0 1px 0 #fff, 0 2px 8px #00ffea33;
+      animation: statusFlash 1.5s infinite alternate;
+    }
+    @keyframes statusFlash {
+      0% { color: #ff00cc; }
+      100% { color: #00ffea; }
+    }
+    /* פסיכדליה ברקע */
+    .bg-psy {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.35;
+      filter: blur(2px);
+      animation: bubbleMove 12s linear infinite;
+    }
+    @keyframes bubbleMove {
+      0% { transform: translateY(100vh) scale(0.7) rotate(0deg); }
+      100% { transform: translateY(-10vh) scale(1.2) rotate(360deg); }
+    }
+    @media (max-width: 600px) {
+      .form-container {
+        padding: 18px 6vw 18px 6vw;
+        min-width: unset;
+        border-radius: 18px;
+      }
+      h2 {
+        font-size: 1.3em;
+      }
+      button {
+        font-size: 1em;
+        padding: 10px 10vw;
+      }
+      input[type="text"], input[type="password"] {
+        font-size: 1em;
+        padding: 10px 8px;
+      }
     }
   </style>
+</body>
+<div class="bg-psy"></div>
+<script>
+// יצירת בועות צבעוניות פסיכדליות ברקע
+const bg = document.querySelector('.bg-psy');
+function randomColor() {
+  const colors = [
+    'rgba(255,0,204,0.5)', 'rgba(0,255,234,0.5)', 'rgba(51,51,153,0.5)',
+    'rgba(255,255,0,0.4)', 'rgba(0,255,153,0.4)', 'rgba(255,0,102,0.4)',
+    'rgba(0,153,255,0.4)', 'rgba(255,102,0,0.4)'
+  ];
+  return colors[Math.floor(Math.random()*colors.length)];
+}
+function createBubble() {
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  const size = Math.random()*120+60;
+  b.style.width = b.style.height = size+'px';
+  b.style.left = Math.random()*100+'vw';
+  b.style.top = (Math.random()*80+10)+'vh';
+  b.style.background = `radial-gradient(circle at 30% 30%, #fff8, ${randomColor()} 80%)`;
+  b.style.animationDuration = (8+Math.random()*8)+'s';
+  bg.appendChild(b);
+  setTimeout(()=>b.remove(), 16000);
+}
+setInterval(createBubble, 700);
+for(let i=0;i<10;i++) createBubble();
+</script>
 </body>
 </html>
